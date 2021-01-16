@@ -29,6 +29,11 @@ import java.lang.annotation.Target;
  *
  * @see ExtensionLoader
  * @see URL
+ *
+ * Adaptive实现了动态制定对应的实现
+ * 如ThreadPool 在getExecutor()方法上有该注解
+ * 使用时只需要在xml文件中: threadpool=cached
+ * 既可使用缓存线程池
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
