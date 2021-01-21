@@ -67,6 +67,7 @@ import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidPort;
  *
  * @export
  */
+// 不同的服务提供者, 有不同的ServiceConfig
 public class ServiceConfig<T> extends AbstractServiceConfig {
 
     private static final long serialVersionUID = 3033787999037024738L;
@@ -493,6 +494,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     logger.info("Export dubbo service " + interfaceClass.getName() + " to url " + url);
                 }
                 if (registryURLs != null && !registryURLs.isEmpty()) {
+                    // 循环遍历所有的注册中心, 将接口注册上去
                     for (URL registryURL : registryURLs) {
                         url = url.addParameterIfAbsent(Constants.DYNAMIC_KEY, registryURL.getParameter(Constants.DYNAMIC_KEY));
                         URL monitorUrl = loadMonitor(registryURL);
@@ -508,10 +510,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         if (StringUtils.isNotEmpty(proxy)) {
                             registryURL = registryURL.addParameter(Constants.PROXY_KEY, proxy);
                         }
-
+                        // invoker中URL包含了: 注册中心的URL+编码后的exportURL
                         Invoker<?> invoker = proxyFactory.getInvoker(ref, (Class) interfaceClass, registryURL.addParameterAndEncoded(Constants.EXPORT_KEY, url.toFullString()));
+                        // 在invoker的基础上增加了当前服务提供者的ServiceConfig
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
-
+                        // 执行暴露逻辑
+                        // ProtocolFilterWrapper => ProtocolListenerWrapper => RegistryProtocol
+                        // ProtocolFilterWrapper => ProtocolListenerWrapper => DubboProtocol
+                        // 因为上面的invoker中的URL包含了注册中心的URL和编码后的exportURL, 所有有两条执行链
+                        // 为什么上面传入的注册中心的URL?
+                        // 因为这样可以实现AOP的效果, 在本地服务器启动完成后, 再向注册中心注册
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         exporters.add(exporter);
                     }
