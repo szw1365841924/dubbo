@@ -64,6 +64,7 @@ public class MockProtocol implements Protocol {
                 return true;
             }
 
+            @Override
             public Result invoke(Invocation invocation) throws RpcException {
                 return null;
             }
